@@ -1,4 +1,4 @@
-# JSON-RPC Server
+# JSON-RPC 2.0 Server for PHP
 ## Requirements
 * PHP 7.0+
 
