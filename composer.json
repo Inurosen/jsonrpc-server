@@ -1,7 +1,10 @@
 {
   "name": "inurosen/jsonrpc-server",
-  "description": "JSON-RPC Server Library",
+  "description": "JSON-RPC 2.0 Server Library for PHP",
   "type": "library",
+  "license": [
+    "GPL-3.0-or-later"
+  ],
   "authors": [
     {
       "name": "Renat Khaertdinov",
