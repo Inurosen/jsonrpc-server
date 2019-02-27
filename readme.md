@@ -2,6 +2,11 @@
 ## Requirements
 * PHP 7.0+
 
+## Installation
+```
+composer require inurosen/jsonrpc-server
+```
+
 ## Usage
 ### 1. Configure
 #### Declarative style
