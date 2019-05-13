@@ -8,6 +8,7 @@
  * file that was distributed with this source code.
  */
 
+use Inurosen\JsonRPCServer\JsonRPCService;
 use Inurosen\JsonRPCServer\MethodRegistry;
 
 class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
@@ -22,7 +23,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
         $jsonRpcResult2 = '{"jsonrpc":"2.0","id":1,"result":1}';
         $jsonRpcResult3 = '{"jsonrpc":"2.0","id":1,"result":[1,2]}';
 
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
 
         $service->call($jsonRpcRequest1);
         $result = $service->getResult();
@@ -37,9 +38,21 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($jsonRpcResult3, $result->toString());
     }
 
+    public function testCallProcedureInCustomScope()
+    {
+        $jsonRpcRequest1 = '{ "jsonrpc": "2.0", "method": "rpc.testScope", "params": 1, "id": 1 }';
+
+        $jsonRpcResult1 = '{"jsonrpc":"2.0","id":1,"result":"test"}';
+
+        $service = new JsonRPCService([JsonRPCService::OPTION_SCOPE => 'test']);
+        $service->call($jsonRpcRequest1);
+        $result = $service->getResult();
+        $this->assertEquals($jsonRpcResult1, $result->toString());
+    }
+
     public function testCallNotification()
     {
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
 
         $jsonRpcRequest = '{ "jsonrpc": "2.0", "method": "rpc.testFoo", "params": 1}';
 
@@ -58,7 +71,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $jsonRpcResult = '[{"jsonrpc":"2.0","id":1,"result":"foo"},{"jsonrpc":"2.0","id":2,"result":1},{"jsonrpc":"2.0","id":3,"result":[1,2]}]';
 
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
         $result = $service->getResult();
         $this->assertEquals($jsonRpcResult, $result->toString());
@@ -72,7 +85,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
             { "jsonrpc": "2.0", "method": "rpc.testClosure", "params": [1, 2]}
         ]';
 
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
         $result = $service->getResult();
         $this->assertEquals('', $result->toString());
@@ -88,7 +101,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $jsonRpcResult = '[{"jsonrpc":"2.0","id":1,"result":"foo"},{"jsonrpc":"2.0","id":3,"result":[1,2]}]';
 
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
         $result = $service->getResult();
         $this->assertEquals($jsonRpcResult, $result->toString());
@@ -96,7 +109,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
     public function testParseError()
     {
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
 
         $jsonRpcRequest = '{ "jsonrpc": "2.0", "method": "rpc.testFoo", "params}';
 
@@ -109,7 +122,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
     public function testInvalidRequest()
     {
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
 
         $jsonRpcRequest = '{ "jsonrpc": "2.0", "params": 1, "id": 1}';
 
@@ -122,12 +135,12 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
     public function testMethodNotFound()
     {
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
 
         $jsonRpcRequest = '{ "jsonrpc": "2.0", "method": "rpc.testNonExistent", "params": 1, "id": 1}';
 
         $jsonRpcResult = '{"jsonrpc":"2.0","id":1,"error":{"code":-32001,"message":"Server error","data":{"code":-32601,"message":"Method not found"}}}';
 
+        $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
         $result = $service->getResult();
         $this->assertEquals($jsonRpcResult, $result->toString());
@@ -143,7 +156,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $jsonRpcResult = '[{"jsonrpc":"2.0","id":1,"result":"foo"},{"jsonrpc":"2.0","id":2,"result":1},{"jsonrpc":"2.0","id":3,"error":{"code":-32001,"message":"Server error","data":{"code":-32601,"message":"Method not found"}}}]';
 
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
         $result = $service->getResult();
         $this->assertEquals($jsonRpcResult, $result->toString());
@@ -151,7 +164,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
     public function testServiceError()
     {
-        $service = new \Inurosen\JsonRPCServer\JsonRPCService();
+        $service = new JsonRPCService();
 
         $jsonRpcRequest = '{ "jsonrpc": "2.0", "method": "rpc.testBaz", "params": 1, "id": 1}';
         $jsonRpcResult = '{"jsonrpc":"2.0","id":1,"error":{"code":-32001,"message":"Server error","data":{"code":123,"message":"On noes!"}}}';
@@ -171,6 +184,8 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
         MethodRegistry::register('rpc.testClosure', function ($params) {
             return $params;
         });
+
+        MethodRegistry::register('rpc.testScope', 'TestService@scope', null, 'test');
     }
 
     protected function tearDown()

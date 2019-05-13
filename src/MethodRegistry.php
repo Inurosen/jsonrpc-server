@@ -11,31 +11,47 @@
 namespace Inurosen\JsonRPCServer;
 
 
+use Inurosen\JsonRPCServer\Exceptions\InvalidScopeException;
+
 class MethodRegistry
 {
+    const SCOPE_DEFAULT = 'default';
+
     private static $methods = [];
 
     private function __construct()
     {
     }
 
-    public static function register($method, $handler, $validator = null)
+    public static function register($method, $handler, $validator = null, $scope = self::SCOPE_DEFAULT)
     {
-        if (!isset(static::$methods[$method])) {
-            static::$methods[$method] = [
+        if (!isset(static::$methods[$scope])) {
+            static::$methods[$scope] = [];
+        }
+
+        if (!isset(static::$methods[$scope][$method])) {
+            static::$methods[$scope][$method] = [
                 'handler'   => $handler,
                 'validator' => $validator,
             ];
         }
     }
 
-    public static function reset()
+    public static function reset($scope = self::SCOPE_DEFAULT)
     {
-        static::$methods = [];
+        if (!isset(static::$methods[$scope])) {
+            throw new InvalidScopeException('Invalid scope: ' . $scope);
+        }
+
+        static::$methods[$scope] = [];
     }
 
-    public static function getMethods()
+    public static function getMethods($scope = self::SCOPE_DEFAULT)
     {
-        return static::$methods;
+        if (!isset(static::$methods[$scope])) {
+            throw new InvalidScopeException('Invalid scope: ' . $scope);
+        }
+
+        return static::$methods[$scope];
     }
 }

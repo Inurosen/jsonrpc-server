@@ -36,21 +36,24 @@ class JsonRPCService
     public const E_MSG_SERVER_ERROR = 'Server error';
 
     public const OPTION_DI_RESOLVER = 'di_resolver';
+    public const OPTION_SCOPE = 'scope';
 
     private $methods;
     private $results;
     private $isBatch = false;
     private $diResolver;
+    private $scope;
 
     public function __construct($options = [])
     {
-        $this->methods = MethodRegistry::getMethods();
         $this->applyOptions($options);
+        $this->methods = MethodRegistry::getMethods($this->scope);
     }
 
     private function applyOptions($options)
     {
         $this->diResolver = $options[self::OPTION_DI_RESOLVER] ?? null;
+        $this->scope = $options[self::OPTION_SCOPE] ?? MethodRegistry::SCOPE_DEFAULT;
     }
 
     public function call(string $request)
@@ -59,7 +62,7 @@ class JsonRPCService
             $this->reset();
             $requests = $this->decode($request);
             $this->execute($requests);
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             $this->results[] = new JsonRPCResult(null, $exception);
         }
     }
@@ -126,31 +129,6 @@ class JsonRPCService
         }
     }
 
-    private function runValidator($request)
-    {
-        $resolvedValidator = $this->methods[$request['method']]['validator'];
-
-        if (!empty($request['params'])) {
-            $params = $request['params'];
-        } else {
-            $params = null;
-        }
-
-        if (is_callable($resolvedValidator) && !$resolvedValidator instanceof ValidatorInterface) {
-            return call_user_func_array($resolvedValidator, [$params]);
-        } else {
-            if (!method_exists($resolvedValidator, 'validate')) {
-                throw new \Exception(self::E_MSG_VALIDATOR_NOT_FOUND, self::E_CODE_VALIDATOR_NOT_FOUND);
-            }
-
-            /** @var ValidatorInterface $object */
-            $object = new $resolvedValidator($params);
-            call_user_func_array([$object, 'validate'], [$params]);
-
-            return $object->getErrors();
-        }
-    }
-
     private function resolveHandler($request)
     {
         $resolvedMethod = $this->methods[$request['method']]['handler'];
@@ -177,6 +155,31 @@ class JsonRPCService
             }
 
             return call_user_func_array([$object, $method], [$params]);
+        }
+    }
+
+    private function runValidator($request)
+    {
+        $resolvedValidator = $this->methods[$request['method']]['validator'];
+
+        if (!empty($request['params'])) {
+            $params = $request['params'];
+        } else {
+            $params = null;
+        }
+
+        if (is_callable($resolvedValidator) && !$resolvedValidator instanceof ValidatorInterface) {
+            return call_user_func_array($resolvedValidator, [$params]);
+        } else {
+            if (!method_exists($resolvedValidator, 'validate')) {
+                throw new \Exception(self::E_MSG_VALIDATOR_NOT_FOUND, self::E_CODE_VALIDATOR_NOT_FOUND);
+            }
+
+            /** @var ValidatorInterface $object */
+            $object = new $resolvedValidator($params);
+            call_user_func_array([$object, 'validate'], [$params]);
+
+            return $object->getErrors();
         }
     }
 

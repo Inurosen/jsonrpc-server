@@ -10,14 +10,19 @@
 
 class TestService
 {
+    public static function bar($params)
+    {
+        return $params;
+    }
+
     public function foo()
     {
         return 'foo';
     }
 
-    public static function bar($params)
+    public function scope()
     {
-        return $params;
+        return 'test';
     }
 
     public function baz($params)
