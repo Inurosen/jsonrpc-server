@@ -183,7 +183,15 @@ class JsonRPCService
         }
     }
 
+    /**
+     * @deprecated
+     */
     public function getResult()
+    {
+        $this->getResponse();
+    }
+
+    public function getResponse()
     {
         return new JsonRPCResponse($this->results, $this->isBatch);
     }

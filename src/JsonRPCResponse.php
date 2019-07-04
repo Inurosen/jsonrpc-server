@@ -13,6 +13,7 @@ namespace Inurosen\JsonRPCServer;
 
 class JsonRPCResponse implements \JsonSerializable, \ArrayAccess, \IteratorAggregate, \Countable
 {
+    /** @var JsonRPCResult[] */
     private $items = [];
     private $isBatch = false;
 
@@ -25,7 +26,7 @@ class JsonRPCResponse implements \JsonSerializable, \ArrayAccess, \IteratorAggre
     /**
      * Get all results as raw
      *
-     * @return array
+     * @return JsonRPCResult[]
      */
     public function getResults()
     {
@@ -48,7 +49,7 @@ class JsonRPCResponse implements \JsonSerializable, \ArrayAccess, \IteratorAggre
             return [];
         }
 
-        return $this->isBatch() ? $this->items : $this->items[0];
+        return $this->isBatch() ? $this->items : $this->items[0]->toArray();
     }
 
     public function getIterator()
@@ -83,7 +84,7 @@ class JsonRPCResponse implements \JsonSerializable, \ArrayAccess, \IteratorAggre
     /**
      * Determine if an item exists at an offset.
      *
-     * @param  mixed $key
+     * @param mixed $key
      *
      * @return bool
      */
@@ -95,7 +96,7 @@ class JsonRPCResponse implements \JsonSerializable, \ArrayAccess, \IteratorAggre
     /**
      * Get an item at a given offset.
      *
-     * @param  mixed $key
+     * @param mixed $key
      *
      * @return mixed
      */
@@ -107,8 +108,8 @@ class JsonRPCResponse implements \JsonSerializable, \ArrayAccess, \IteratorAggre
     /**
      * Set the item at a given offset.
      *
-     * @param  mixed $key
-     * @param  mixed $value
+     * @param mixed $key
+     * @param mixed $value
      *
      * @return void
      */
@@ -124,7 +125,7 @@ class JsonRPCResponse implements \JsonSerializable, \ArrayAccess, \IteratorAggre
     /**
      * Unset the item at a given offset.
      *
-     * @param  string $key
+     * @param string $key
      *
      * @return void
      */

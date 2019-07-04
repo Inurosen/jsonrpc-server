@@ -74,4 +74,9 @@ class JsonRPCResult implements \JsonSerializable
 
         return $jsonSerialized;
     }
+
+    public function toArray()
+    {
+        return $this->jsonSerialize();
+    }
 }
