@@ -49,7 +49,13 @@ class JsonRPCResponse implements \JsonSerializable, \ArrayAccess, \IteratorAggre
             return [];
         }
 
-        return $this->isBatch() ? $this->items : $this->items[0]->toArray();
+        if ($this->isBatch()) {
+            return array_map(function (JsonRPCResult $item) {
+                return $item->toArray();
+            }, $this->items);
+        }
+
+        return $this->items[0]->toArray();
     }
 
     public function getIterator()
