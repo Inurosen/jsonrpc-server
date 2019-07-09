@@ -26,15 +26,15 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
         $service = new JsonRPCService();
 
         $service->call($jsonRpcRequest1);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult1, $result->toString());
 
         $service->call($jsonRpcRequest2);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult2, $result->toString());
 
         $service->call($jsonRpcRequest3);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult3, $result->toString());
     }
 
@@ -46,7 +46,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $service = new JsonRPCService([JsonRPCService::OPTION_SCOPE => 'test']);
         $service->call($jsonRpcRequest1);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult1, $result->toString());
     }
 
@@ -57,7 +57,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
         $jsonRpcRequest = '{ "jsonrpc": "2.0", "method": "rpc.testFoo", "params": 1}';
 
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals('', $result->toString());
     }
 
@@ -73,7 +73,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult, $result->toString());
     }
 
@@ -87,7 +87,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals('', $result->toString());
     }
 
@@ -103,7 +103,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult, $result->toString());
     }
 
@@ -116,7 +116,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
         $jsonRpcResult = '{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"Parse error"}}';
 
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult, $result->toString());
     }
 
@@ -129,7 +129,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
         $jsonRpcResult = '{"jsonrpc":"2.0","id":1,"error":{"code":-32001,"message":"Server error","data":{"code":-32600,"message":"Invalid request"}}}';
 
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult, $result->toString());
     }
 
@@ -142,7 +142,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult, $result->toString());
     }
 
@@ -158,7 +158,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
 
         $service = new JsonRPCService();
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult, $result->toString());
     }
 
@@ -170,7 +170,7 @@ class JsonRPCServiceTest extends \PHPUnit\Framework\TestCase
         $jsonRpcResult = '{"jsonrpc":"2.0","id":1,"error":{"code":-32001,"message":"Server error","data":{"code":123,"message":"On noes!"}}}';
 
         $service->call($jsonRpcRequest);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult, $result->toString());
 
     }

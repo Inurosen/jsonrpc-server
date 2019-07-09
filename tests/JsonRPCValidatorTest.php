@@ -28,19 +28,19 @@ class JsonRPCValidatorTest extends \PHPUnit\Framework\TestCase
         $service = new JsonRPCService();
 
         $service->call($jsonRpcRequest1);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult1, $result->toString());
 
         $service->call($jsonRpcRequest2);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult2, $result->toString());
 
         $service->call($jsonRpcRequest3);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult3, $result->toString());
 
         $service->call($jsonRpcRequest4);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult4, $result->toString());
     }
 
@@ -59,19 +59,19 @@ class JsonRPCValidatorTest extends \PHPUnit\Framework\TestCase
         $service = new JsonRPCService();
 
         $service->call($jsonRpcRequest1);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult1, $result->toString());
 
         $service->call($jsonRpcRequest2);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult2, $result->toString());
 
         $service->call($jsonRpcRequest3);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult3, $result->toString());
 
         $service->call($jsonRpcRequest4);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult4, $result->toString());
     }
 

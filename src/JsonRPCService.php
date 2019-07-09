@@ -188,7 +188,7 @@ class JsonRPCService
      */
     public function getResult()
     {
-        $this->getResponse();
+        return $this->getResponse();
     }
 
     public function getResponse()

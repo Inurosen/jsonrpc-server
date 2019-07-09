@@ -34,15 +34,15 @@ class JsonRPCOptionsTest extends \PHPUnit\Framework\TestCase
         ]);
 
         $service->call($jsonRpcRequest1);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult1, $result->toString());
 
         $service->call($jsonRpcRequest2);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult2, $result->toString());
 
         $service->call($jsonRpcRequest3);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult3, $result->toString());
     }
 
@@ -63,15 +63,15 @@ class JsonRPCOptionsTest extends \PHPUnit\Framework\TestCase
         ]);
 
         $service->call($jsonRpcRequest1);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult1, $result->toString());
 
         $service->call($jsonRpcRequest2);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult2, $result->toString());
 
         $service->call($jsonRpcRequest3);
-        $result = $service->getResult();
+        $result = $service->getResponse();
         $this->assertEquals($jsonRpcResult3, $result->toString());
     }
 
