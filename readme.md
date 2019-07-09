@@ -9,7 +9,7 @@ composer require inurosen/jsonrpc-server
 
 ## Usage
 ### 1. Configure
-#### Declarative style
+#### OOP style
 ```php
 class FooService {
     public function bar($params) {
@@ -26,15 +26,14 @@ MethodRegistry::register('hello.world', 'FooService@bar', HelloWorldValidator::c
 MethodRegistry::register('hello.world', function ($params) {
     return 'Hello world!';
 }, HelloWorldValidator::class);
-
 ```
 
 ### 2. Execute
 ```php
 $jsonRpcServer = new \Inurosen\JsonRPCServer\JsonRPCService();
 
-$jsonRpcServer->call('hello.world');
-$result = $jsonRpcServer->getResult()->toString();
+$jsonRpcServer->call('{"jsonrpc": "2.0", "method": "hello.world", "params": {"param1": 1, "param2": 2}, "id": 1}');
+$result = $jsonRpcServer->getResponse()->toString();
 
 echo $result;
 ```
