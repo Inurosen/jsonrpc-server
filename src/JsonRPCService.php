@@ -37,12 +37,14 @@ class JsonRPCService
 
     public const OPTION_DI_RESOLVER = 'di_resolver';
     public const OPTION_SCOPE = 'scope';
+    public const OPTION_ERROR_HANDLER = 'error_handler';
 
     private $methods;
     private $results;
     private $isBatch = false;
     private $diResolver;
     private $scope;
+    private $errorHandler;
 
     public function __construct($options = [])
     {
@@ -54,6 +56,9 @@ class JsonRPCService
     {
         $this->diResolver = $options[self::OPTION_DI_RESOLVER] ?? null;
         $this->scope = $options[self::OPTION_SCOPE] ?? MethodRegistry::SCOPE_DEFAULT;
+        if (isset($options[self::OPTION_ERROR_HANDLER]) && is_callable($options[self::OPTION_ERROR_HANDLER])) {
+            $this->errorHandler = $options[self::OPTION_ERROR_HANDLER];
+        }
     }
 
     public function call(string $request)
@@ -97,6 +102,9 @@ class JsonRPCService
             } catch (ValidationException $exception) {
                 $result = $exception;
             } catch (\Throwable $exception) {
+                if ($this->errorHandler) {
+                    call_user_func($this->errorHandler, $exception);
+                }
                 $exception = new ServerErrorException(self::E_MSG_SERVER_ERROR, self::E_CODE_SERVER_ERROR, $exception);
                 $result = $exception;
             }
