@@ -38,6 +38,7 @@ class JsonRPCService
     public const OPTION_DI_RESOLVER = 'di_resolver';
     public const OPTION_SCOPE = 'scope';
     public const OPTION_ERROR_HANDLER = 'error_handler';
+    public const OPTION_BEFORE_EXECUTE = 'before_execute';
 
     private $methods;
     private $results;
@@ -45,6 +46,7 @@ class JsonRPCService
     private $diResolver;
     private $scope;
     private $errorHandler;
+    private $beforeExecute;
 
     public function __construct($options = [])
     {
@@ -58,6 +60,9 @@ class JsonRPCService
         $this->scope = $options[self::OPTION_SCOPE] ?? MethodRegistry::SCOPE_DEFAULT;
         if (isset($options[self::OPTION_ERROR_HANDLER]) && is_callable($options[self::OPTION_ERROR_HANDLER])) {
             $this->errorHandler = $options[self::OPTION_ERROR_HANDLER];
+        }
+        if (isset($options[self::OPTION_BEFORE_EXECUTE]) && is_callable($options[self::OPTION_BEFORE_EXECUTE])) {
+            $this->beforeExecute = $options[self::OPTION_BEFORE_EXECUTE];
         }
     }
 
@@ -98,14 +103,19 @@ class JsonRPCService
         foreach ($requests as $request) {
             try {
                 $this->validate($request);
+                $this->callBeforeExecute($request);
                 $result = $this->resolveHandler($request);
             } catch (ValidationException $exception) {
                 $result = $exception;
             } catch (\Throwable $exception) {
                 if ($this->errorHandler) {
-                    call_user_func($this->errorHandler, $exception);
+                    $handled = call_user_func($this->errorHandler, $exception);
+                    if ($handled instanceof \Throwable) {
+                        $exception = $handled;
+                    }
+                } else {
+                    $exception = new ServerErrorException(self::E_MSG_SERVER_ERROR, self::E_CODE_SERVER_ERROR, $exception);
                 }
-                $exception = new ServerErrorException(self::E_MSG_SERVER_ERROR, self::E_CODE_SERVER_ERROR, $exception);
                 $result = $exception;
             }
 
@@ -148,14 +158,14 @@ class JsonRPCService
         }
 
         if (is_callable($resolvedMethod)) {
-            return call_user_func_array($resolvedMethod, [$params]);
+            return call_user_func_array($resolvedMethod, [$params, $request]);
         } else {
-            list($class, $method) = explode('@', $resolvedMethod);
+            [$class, $method] = explode('@', $resolvedMethod);
 
             if ($this->diResolver !== null) {
-                $object = call_user_func_array($this->diResolver, [$class]);
+                $object = call_user_func_array($this->diResolver, [$class, $request]);
             } else {
-                $object = new $class;
+                $object = new $class($request);
             }
 
             if (!is_object($object) || !method_exists($object, $method)) {
@@ -202,5 +212,12 @@ class JsonRPCService
     public function getResponse()
     {
         return new JsonRPCResponse($this->results, $this->isBatch);
+    }
+
+    private function callBeforeExecute($request)
+    {
+        if ($this->beforeExecute) {
+            call_user_func_array($this->beforeExecute, [$request]);
+        }
     }
 }
