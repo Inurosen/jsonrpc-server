@@ -46,16 +46,19 @@ class JsonRPCResult implements \JsonSerializable
             $jsonSerialized['error'] = [
                 'code'    => $this->result->getCode(),
                 'message' => $this->result->getMessage(),
-                'data'    => [
+
+            ];
+            if ($this->result->getPrevious()) {
+                $jsonSerialized['error']['data'] = [
                     'code'    => $this->result->getPrevious()->getCode(),
                     'message' => $this->result->getPrevious()->getMessage(),
-                ],
-            ];
+                ];
+            }
 
             return $jsonSerialized;
         }
 
-        if ($this->result instanceof \Exception) {
+        if ($this->result instanceof \Throwable) {
             $jsonSerialized['error'] = [
                 'code'    => $this->result->getCode(),
                 'message' => $this->result->getMessage(),
