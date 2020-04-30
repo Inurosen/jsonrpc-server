@@ -103,7 +103,7 @@ class JsonRPCService
         foreach ($requests as $request) {
             try {
                 $this->validate($request);
-                $this->callBeforeExecute($request);
+                $request = $this->callBeforeExecute($request);
                 $result = $this->resolveHandler($request);
             } catch (ValidationException $exception) {
                 $result = $exception;
@@ -114,7 +114,8 @@ class JsonRPCService
                         $exception = $handled;
                     }
                 } else {
-                    $exception = new ServerErrorException(self::E_MSG_SERVER_ERROR, self::E_CODE_SERVER_ERROR, $exception);
+                    $exception = new ServerErrorException(self::E_MSG_SERVER_ERROR, self::E_CODE_SERVER_ERROR,
+                        $exception);
                 }
                 $result = $exception;
             }
@@ -217,7 +218,9 @@ class JsonRPCService
     private function callBeforeExecute($request)
     {
         if ($this->beforeExecute) {
-            call_user_func_array($this->beforeExecute, [$request]);
+            $request = call_user_func_array($this->beforeExecute, [$request]);
         }
+
+        return $request;
     }
 }
