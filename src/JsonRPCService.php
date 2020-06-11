@@ -230,7 +230,7 @@ class JsonRPCService
     {
         $params = $request->getParams();
         if (is_callable($this->paramsGetter)) {
-            $params = call_user_func_array($this->paramsGetter, [$params]);
+            $params = call_user_func_array($this->paramsGetter, [$request]);
         }
 
         return $params;
