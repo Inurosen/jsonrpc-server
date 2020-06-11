@@ -10,6 +10,7 @@
 
 namespace Inurosen\JsonRPCServer;
 
+use Inurosen\JsonRPCServer\DTO\RequestDTO;
 use Inurosen\JsonRPCServer\Exceptions\JsonRPCValidationException;
 use Inurosen\JsonRPCServer\Exceptions\ServerErrorException;
 use Inurosen\JsonRPCServer\Exceptions\ValidationException;
@@ -38,7 +39,7 @@ class JsonRPCService
     public const OPTION_DI_RESOLVER = 'di_resolver';
     public const OPTION_SCOPE = 'scope';
     public const OPTION_ERROR_HANDLER = 'error_handler';
-    public const OPTION_BEFORE_EXECUTE = 'before_execute';
+    public const OPTION_PARAMS_GETTER = 'params_getter';
 
     private $methods;
     private $results;
@@ -46,24 +47,13 @@ class JsonRPCService
     private $diResolver;
     private $scope;
     private $errorHandler;
-    private $beforeExecute;
+    private $beforeExecute = [];
+    private $paramsGetter;
 
     public function __construct($options = [])
     {
         $this->applyOptions($options);
         $this->methods = MethodRegistry::getMethods($this->scope);
-    }
-
-    private function applyOptions($options)
-    {
-        $this->diResolver = $options[self::OPTION_DI_RESOLVER] ?? null;
-        $this->scope = $options[self::OPTION_SCOPE] ?? MethodRegistry::SCOPE_DEFAULT;
-        if (isset($options[self::OPTION_ERROR_HANDLER]) && is_callable($options[self::OPTION_ERROR_HANDLER])) {
-            $this->errorHandler = $options[self::OPTION_ERROR_HANDLER];
-        }
-        if (isset($options[self::OPTION_BEFORE_EXECUTE]) && is_callable($options[self::OPTION_BEFORE_EXECUTE])) {
-            $this->beforeExecute = $options[self::OPTION_BEFORE_EXECUTE];
-        }
     }
 
     public function call(string $request)
@@ -74,6 +64,28 @@ class JsonRPCService
             $this->execute($requests);
         } catch (\Throwable $exception) {
             $this->results[] = new JsonRPCResult(null, $exception);
+        }
+    }
+
+    public function getResponse()
+    {
+        return new JsonRPCResponse($this->results, $this->isBatch);
+    }
+
+    public function addBeforeExecute(callable $function)
+    {
+        $this->beforeExecute[] = $function;
+    }
+
+    private function applyOptions($options)
+    {
+        $this->diResolver = $options[self::OPTION_DI_RESOLVER] ?? null;
+        $this->scope = $options[self::OPTION_SCOPE] ?? MethodRegistry::SCOPE_DEFAULT;
+        if (isset($options[self::OPTION_ERROR_HANDLER]) && is_callable($options[self::OPTION_ERROR_HANDLER])) {
+            $this->errorHandler = $options[self::OPTION_ERROR_HANDLER];
+        }
+        if (isset($options[self::OPTION_PARAMS_GETTER]) && is_callable($options[self::OPTION_PARAMS_GETTER])) {
+            $this->paramsGetter = $options[self::OPTION_PARAMS_GETTER];
         }
     }
 
@@ -103,7 +115,8 @@ class JsonRPCService
         foreach ($requests as $request) {
             try {
                 $this->validate($request);
-                $request = $this->callBeforeExecute($request);
+                $request = $this->convertRequestToDTO($request);
+                $this->callBeforeExecute($request);
                 $result = $this->resolveHandler($request);
             } catch (ValidationException $exception) {
                 $result = $exception;
@@ -125,8 +138,8 @@ class JsonRPCService
              *
              * @link https://www.jsonrpc.org/specification#notification
              */
-            if (!empty($request['id'])) {
-                $this->results[] = new JsonRPCResult($request['id'], $result);
+            if (!empty($request->getId())) {
+                $this->results[] = new JsonRPCResult($request->getId(), $result);
             }
         }
     }
@@ -146,17 +159,15 @@ class JsonRPCService
         if (!empty($this->methods[$request['method']]['validator']) && $errors = $this->runValidator($request)) {
             throw new ValidationException(self::E_MSG_INVALID_PARAMS, self::E_CODE_INVALID_PARAMS, null, $errors);
         }
+
+        return $request;
     }
 
-    private function resolveHandler($request)
+    private function resolveHandler(RequestDTO $request)
     {
-        $resolvedMethod = $this->methods[$request['method']]['handler'];
+        $resolvedMethod = $this->methods[$request->getMethod()]['handler'];
 
-        if (!empty($request['params'])) {
-            $params = $request['params'];
-        } else {
-            $params = null;
-        }
+        $params = $this->getParams($request);
 
         if (is_callable($resolvedMethod)) {
             return call_user_func_array($resolvedMethod, [$params, $request]);
@@ -181,11 +192,7 @@ class JsonRPCService
     {
         $resolvedValidator = $this->methods[$request['method']]['validator'];
 
-        if (!empty($request['params'])) {
-            $params = $request['params'];
-        } else {
-            $params = null;
-        }
+        $params = $request['params'] ?? null;
 
         if (is_callable($resolvedValidator) && !$resolvedValidator instanceof ValidatorInterface) {
             return call_user_func_array($resolvedValidator, [$params]);
@@ -202,25 +209,30 @@ class JsonRPCService
         }
     }
 
-    /**
-     * @deprecated
-     */
-    public function getResult()
+    private function callBeforeExecute(RequestDTO $request)
     {
-        return $this->getResponse();
+        foreach ($this->beforeExecute as $beforeExecute) {
+            call_user_func_array($beforeExecute, [$request]);
+        }
     }
 
-    public function getResponse()
+    private function convertRequestToDTO($request): RequestDTO
     {
-        return new JsonRPCResponse($this->results, $this->isBatch);
+        $version = $request['jsonrpc'];
+        $method = $request['method'];
+        $params = $request['params'] ?? null;
+        $id = $request['id'] ?? null;
+
+        return new RequestDTO($version, $method, $params, $id);
     }
 
-    private function callBeforeExecute($request)
+    private function getParams(RequestDTO $request)
     {
-        if ($this->beforeExecute) {
-            $request = call_user_func_array($this->beforeExecute, [$request]);
+        $params = $request->getParams();
+        if (is_callable($this->paramsGetter)) {
+            $params = call_user_func_array($this->paramsGetter, [$params]);
         }
 
-        return $request;
+        return $params;
     }
 }
