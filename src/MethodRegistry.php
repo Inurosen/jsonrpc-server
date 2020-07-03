@@ -15,15 +15,13 @@ use Inurosen\JsonRPCServer\Exceptions\InvalidScopeException;
 
 class MethodRegistry
 {
-    const SCOPE_DEFAULT = 'default';
-
     private static $methods = [];
 
     private function __construct()
     {
     }
 
-    public static function register($method, $handler, $validator = null, $scope = self::SCOPE_DEFAULT)
+    public static function register($method, $handler, $validator = null, $scope = JsonRPCService::SCOPE_DEFAULT)
     {
         if (!isset(static::$methods[$scope])) {
             static::$methods[$scope] = [];
@@ -37,7 +35,7 @@ class MethodRegistry
         }
     }
 
-    public static function reset($scope = self::SCOPE_DEFAULT)
+    public static function reset($scope = JsonRPCService::SCOPE_DEFAULT)
     {
         if (!isset(static::$methods[$scope])) {
             throw new InvalidScopeException('Invalid scope: ' . $scope);
@@ -46,7 +44,7 @@ class MethodRegistry
         static::$methods[$scope] = [];
     }
 
-    public static function getMethods($scope = self::SCOPE_DEFAULT)
+    public static function getMethods($scope = JsonRPCService::SCOPE_DEFAULT)
     {
         if (!isset(static::$methods[$scope])) {
             throw new InvalidScopeException('Invalid scope: ' . $scope);

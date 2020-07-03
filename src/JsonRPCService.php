@@ -40,6 +40,9 @@ class JsonRPCService
     public const OPTION_SCOPE = 'scope';
     public const OPTION_ERROR_HANDLER = 'error_handler';
     public const OPTION_PARAMS_GETTER = 'params_getter';
+    public const SCOPE_DEFAULT = 'default';
+
+    private static $instances = [];
 
     private $methods;
     private $results;
@@ -56,7 +59,29 @@ class JsonRPCService
         $this->methods = MethodRegistry::getMethods($this->scope);
     }
 
-    public function call(string $request)
+    /**
+     * Get an instance of JsonRPCService for specified scope
+     * If the instance doesn't exist it will be created
+     *
+     * @param string $scope
+     * @return static
+     */
+    public static function scope(string $scope = self::SCOPE_DEFAULT): self
+    {
+        if (!isset(self::$instances[$scope])) {
+            self::$instances[$scope] = new self([self::OPTION_SCOPE => $scope]);
+        }
+
+        return self::$instances[$scope];
+    }
+
+    /**
+     * Call a JSON-RPC request
+     *
+     * @param string $request
+     * @return $this
+     */
+    public function call(string $request): self
     {
         try {
             $this->reset();
@@ -65,22 +90,88 @@ class JsonRPCService
         } catch (\Throwable $exception) {
             $this->results[] = new JsonRPCResult(null, $exception);
         }
+
+        return $this;
     }
 
-    public function getResponse()
+    /**
+     * Get a response for the last call
+     *
+     * @return JsonRPCResponse
+     */
+    public function getResponse(): JsonRPCResponse
     {
         return new JsonRPCResponse($this->results, $this->isBatch);
     }
 
-    public function addBeforeExecute(callable $function)
+    /**
+     * Add a function to be executed before executing the single JSON-RPC request
+     * This function will be called for each request in batch
+     * The callable function accepts following arguments:
+     * - RequestDTO object
+     *
+     * @param callable $function
+     * @return $this
+     * @see RequestDTO
+     */
+    public function addBeforeExecute(callable $function): self
     {
         $this->beforeExecute[] = $function;
+
+        return $this;
+    }
+
+    /**
+     * Set an error handler
+     * The callable function accepts following arguments:
+     * - Thrown exception
+     *
+     * @param callable|null $function
+     * @return $this
+     */
+    public function setErrorHandler(?callable $function): self
+    {
+        $this->applyOptions([self::OPTION_ERROR_HANDLER => $function]);
+
+        return $this;
+    }
+
+    /**
+     * Set a dependency resolver function
+     * The callable function accepts following arguments:
+     * - Class name of a request handler
+     * - RequestDTO object
+     *
+     * @param callable|null $function
+     * @return $this
+     */
+    public function setDependencyResolver(?callable $function): self
+    {
+        $this->applyOptions([self::OPTION_DI_RESOLVER => $function]);
+
+        return $this;
+    }
+
+    /**
+     * Set a request params getter function
+     * Whatever the callable function returns will be supplied to request handler
+     * The callable function accepts following arguments:
+     * - RequestDTO object
+     *
+     * @param callable|null $function
+     * @return $this
+     */
+    public function setParamsGetter(?callable $function): self
+    {
+        $this->applyOptions([self::OPTION_PARAMS_GETTER => $function]);
+
+        return $this;
     }
 
     private function applyOptions($options)
     {
         $this->diResolver = $options[self::OPTION_DI_RESOLVER] ?? null;
-        $this->scope = $options[self::OPTION_SCOPE] ?? MethodRegistry::SCOPE_DEFAULT;
+        $this->scope = $options[self::OPTION_SCOPE] ?? self::SCOPE_DEFAULT;
         if (isset($options[self::OPTION_ERROR_HANDLER]) && is_callable($options[self::OPTION_ERROR_HANDLER])) {
             $this->errorHandler = $options[self::OPTION_ERROR_HANDLER];
         }
