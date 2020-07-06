@@ -205,8 +205,8 @@ class JsonRPCService
     {
         foreach ($requests as $request) {
             try {
-                $this->validate($request);
                 $request = $this->convertRequestToDTO($request);
+                $this->validate($request);
                 $this->callBeforeExecute($request);
                 $result = $this->resolveHandler($request);
             } catch (ValidationException $exception) {
@@ -235,19 +235,18 @@ class JsonRPCService
         }
     }
 
-    private function validate(array $request)
+    private function validate(RequestDTO $request)
     {
-        if (empty($request['jsonrpc'])
-            || $request['jsonrpc'] !== self::API_VERSION
-            || empty($request['method'])) {
+        if ($request->getVersion() !== self::API_VERSION
+            || empty($request->getMethod())) {
             throw new JsonRPCValidationException(self::E_MSG_INVALID_REQUEST, self::E_CODE_INVALID_REQUEST);
         }
 
-        if (!isset($this->methods[$request['method']])) {
+        if (!isset($this->methods[$request->getMethod()])) {
             throw new JsonRPCValidationException(self::E_MSG_METHOD_NOT_FOUND, self::E_CODE_METHOD_NOT_FOUND);
         }
 
-        if (!empty($this->methods[$request['method']]['validator']) && $errors = $this->runValidator($request)) {
+        if (!empty($this->methods[$request->getMethod()]['validator']) && $errors = $this->runValidator($request)) {
             throw new ValidationException(self::E_MSG_INVALID_PARAMS, self::E_CODE_INVALID_PARAMS, null, $errors);
         }
 
@@ -279,11 +278,11 @@ class JsonRPCService
         }
     }
 
-    private function runValidator($request)
+    private function runValidator(RequestDTO $request)
     {
-        $resolvedValidator = $this->methods[$request['method']]['validator'];
+        $resolvedValidator = $this->methods[$request->getMethod()]['validator'];
 
-        $params = $request['params'] ?? null;
+        $params = $request->getParams();
 
         if (is_callable($resolvedValidator) && !$resolvedValidator instanceof ValidatorInterface) {
             return call_user_func_array($resolvedValidator, [$params]);
@@ -309,8 +308,8 @@ class JsonRPCService
 
     private function convertRequestToDTO($request): RequestDTO
     {
-        $version = $request['jsonrpc'];
-        $method = $request['method'];
+        $version = $request['jsonrpc'] ?? '';
+        $method = $request['method'] ?? '';
         $params = $request['params'] ?? null;
         $id = $request['id'] ?? null;
 
