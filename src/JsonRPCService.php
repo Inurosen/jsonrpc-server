@@ -262,19 +262,32 @@ class JsonRPCService
         if (is_callable($resolvedMethod)) {
             return call_user_func_array($resolvedMethod, [$params, $request]);
         } else {
-            [$class, $method] = explode('@', $resolvedMethod);
+            if (is_array($resolvedMethod)) {
+                $class = $resolvedMethod[0];
+                $method = $resolvedMethod[1];
+            } else {
+                $handler = explode('@', $resolvedMethod);
+                $class = $handler[0];
 
+                if (isset($handler[1])) {
+                    $method = $handler[1];
+                }
+            }
             if ($this->diResolver !== null) {
                 $object = call_user_func_array($this->diResolver, [$class, $request]);
             } else {
                 $object = new $class($request);
             }
 
-            if (!is_object($object) || !method_exists($object, $method)) {
+            if (!is_object($object)) {
                 throw new \Exception(self::E_MSG_METHOD_NOT_FOUND, self::E_CODE_METHOD_NOT_FOUND);
             }
 
-            return call_user_func_array([$object, $method], [$params]);
+            if (isset($method)) {
+                return call_user_func_array([$object, $method], [$params]);
+            }
+
+            return call_user_func_array($object, [$params]);
         }
     }
 
